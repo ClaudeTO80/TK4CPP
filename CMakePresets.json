@@ -1,0 +1,66 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": { "TK4CPP_BUILD_TESTS": "ON" }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug (Ninja)",
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "TK4CPP_WARNINGS_AS_ERRORS": "ON" }
+    },
+    {
+      "name": "release",
+      "displayName": "Release (Ninja)",
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "debug-clang",
+      "displayName": "Debug, Clang (Ninja)",
+      "inherits": "debug",
+      "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++" }
+    },
+    {
+      "name": "static",
+      "displayName": "Release, static libraries only",
+      "inherits": "release",
+      "cacheVariables": { "TK4CPP_BUILD_SHARED": "OFF", "TK4CPP_BUILD_STATIC": "ON" }
+    },
+    {
+      "name": "docs",
+      "displayName": "Documentation only",
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": { "TK4CPP_BUILD_DOCS": "ON", "TK4CPP_BUILD_TESTS": "OFF" }
+    },
+    {
+      "name": "msvc",
+      "displayName": "Visual Studio 2022",
+      "inherits": "base",
+      "generator": "Visual Studio 17 2022",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "debug-clang", "configurePreset": "debug-clang" },
+    { "name": "static", "configurePreset": "static" },
+    { "name": "msvc-release", "configurePreset": "msvc", "configuration": "Release" }
+  ],
+  "testPresets": [
+    { "name": "debug", "configurePreset": "debug", "output": { "outputOnFailure": true } },
+    { "name": "release", "configurePreset": "release", "output": { "outputOnFailure": true } },
+    { "name": "debug-clang", "configurePreset": "debug-clang", "output": { "outputOnFailure": true } },
+    { "name": "static", "configurePreset": "static", "output": { "outputOnFailure": true } },
+    { "name": "msvc-release", "configurePreset": "msvc", "configuration": "Release", "output": { "outputOnFailure": true } }
+  ]
+}
