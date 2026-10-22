@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/TK4CPPThreadPoolTargets.cmake")
+
+check_required_components(TK4CPPThreadPool)
