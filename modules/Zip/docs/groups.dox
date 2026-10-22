@@ -1,0 +1,77 @@
+/**
+ * @defgroup zip_core Core layer
+ * @brief RAII wrappers over libzip: Zip::Archive, Zip::Entry, Zip::File and Zip::Source.
+ *
+ * The core layer mirrors libzip's object model with value semantics. Start
+ * with @ref guide_core, then see @ref pitfalls for the behaviours that surprise
+ * people. Declared in `ZipWrapper/Zip.h`.
+ */
+
+/**
+ * @defgroup zip_types Types, options and utilities
+ * @brief Enumerations, option structures and small helpers used by the core layer.
+ *
+ * Zip::OpenFlag, Zip::Compression, Zip::Encryption, Zip::Stat,
+ * Zip::ExtractOptions and Zip::passwordFromEnv().
+ */
+
+/**
+ * @defgroup zip_errors Errors
+ * @brief Zip::Exception and the helpers that raise it.
+ *
+ * See @ref errors for what each Zip::Exception::zipCode() means in this library.
+ */
+
+/**
+ * @defgroup zip_highlevel High-level API
+ * @brief One call per task: archive a directory, list files, read, extract,
+ *        verify, and change passwords, with transparent encryption.
+ *
+ * Declared in `ZipWrapper/HighLevel.h`, built on the @ref zip_core "core layer".
+ * Start with @ref guide_highlevel. Read @ref security before relying on the
+ * password protection.
+ */
+
+/**
+ * @defgroup zip_hl_filters Path filters
+ * @ingroup zip_highlevel
+ * @brief Include/exclude patterns shared by archiving, listing and extraction.
+ *
+ * The exact rules, with examples, are in @ref patterns.
+ */
+
+/**
+ * @defgroup zip_hl_archive Archiving
+ * @ingroup zip_highlevel
+ * @brief Recursive archiving of directories and file lists, with optional password protection.
+ */
+
+/**
+ * @defgroup zip_hl_list Listing
+ * @ingroup zip_highlevel
+ * @brief File lists, totals and an `unzip -l` style table. None of them needs a password.
+ */
+
+/**
+ * @defgroup zip_hl_read Reading
+ * @ingroup zip_highlevel
+ * @brief Read one member into memory, decrypting it transparently.
+ */
+
+/**
+ * @defgroup zip_hl_extract Extraction
+ * @ingroup zip_highlevel
+ * @brief Safe, filtered extraction with a per-entry report.
+ */
+
+/**
+ * @defgroup zip_hl_verify Verification
+ * @ingroup zip_highlevel
+ * @brief Streaming integrity check of every member.
+ */
+
+/**
+ * @defgroup zip_hl_protect Changing protection
+ * @ingroup zip_highlevel
+ * @brief Add, change or remove the password of an existing archive.
+ */

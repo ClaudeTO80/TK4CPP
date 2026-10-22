@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Claudio
+
+@PACKAGE_INIT@
+
+# TK4CPP_ZipConfig.cmake
+# Usage: find_package(TK4CPP_Zip REQUIRED)
+#        target_link_libraries(app PRIVATE TK4CPP::Zip)
+#
+# Imported targets (only the flavours that were installed exist):
+#   TK4CPP::Zip_static   the static library
+#   TK4CPP::Zip_shared   the shared library
+#   TK4CPP::Zip          one of the above:
+#                          - TK4CPP_ZIP_USE_STATIC_LIBS=ON  -> static
+#                          - TK4CPP_ZIP_USE_STATIC_LIBS=OFF -> shared
+#                          - unset: the flavour the package was built to prefer
+#                            (@TK4CPP_ZIP_DEFAULT_FLAVOUR@), or the only one installed.
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(libzip 1.11 CONFIG)
+
+include("${CMAKE_CURRENT_LIST_DIR}/TK4CPP_ZipTargets.cmake")
+
+if(NOT TARGET TK4CPP::Zip)
+    set(_tk4cpp_zip_pick "@TK4CPP_ZIP_DEFAULT_FLAVOUR@")
+    if(DEFINED TK4CPP_ZIP_USE_STATIC_LIBS)
+        if(TK4CPP_ZIP_USE_STATIC_LIBS)
+            set(_tk4cpp_zip_pick static)
+        else()
+            set(_tk4cpp_zip_pick shared)
+        endif()
+    endif()
+    if(NOT TARGET TK4CPP::Zip_${_tk4cpp_zip_pick})
+        # The requested flavour is not installed: use the other one.
+        if(_tk4cpp_zip_pick STREQUAL "static")
+            set(_tk4cpp_zip_pick shared)
+        else()
+            set(_tk4cpp_zip_pick static)
+        endif()
+    endif()
+    if(TARGET TK4CPP::Zip_${_tk4cpp_zip_pick})
+        add_library(TK4CPP::Zip ALIAS TK4CPP::Zip_${_tk4cpp_zip_pick})
+    endif()
+    unset(_tk4cpp_zip_pick)
+endif()
+
+check_required_components(TK4CPP_Zip)

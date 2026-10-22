@@ -1,0 +1,72 @@
+/**
+ * @example 01_backup_directory.cpp
+ * Recursive backup of a directory with the core layer.
+ *
+ * Shows how to build portable archive names (relative, UTF-8, `/` separated),
+ * exclude paths, store already-compressed files without recompressing them, and
+ * keep the output archive from being added to itself. Uses Zip::Archive::create(),
+ * Zip::Archive::addFile(), Zip::Archive::mkdir(), Zip::Archive::setCompression()
+ * and Zip::Archive::close().
+ */
+
+/**
+ * @example 02_list_archive.cpp
+ * An `unzip -l` style listing with the core layer.
+ *
+ * Iterates an archive with range-for and reads Zip::Stat through
+ * Zip::Entry::stat(): sizes, compression method, encryption and modification time.
+ */
+
+/**
+ * @example 03_extract.cpp
+ * Per-entry extraction that reports every failure.
+ *
+ * Unlike Zip::Archive::extractAll(), which stops at the first error, this loops
+ * over the entries and maps Zip::Exception::zipCode() to messages the user can
+ * act on. Uses Zip::ExtractOptions and Zip::Entry::extract().
+ */
+
+/**
+ * @example 04_plugin_package.cpp
+ * Build and load a package entirely in memory.
+ *
+ * Uses Zip::Archive::add() with `std::span<const std::byte>`,
+ * Zip::Archive::contains() and Zip::Entry::readAll(); no temporary files.
+ */
+
+/**
+ * @example 05_update_archive.cpp
+ * Modify an archive in place and write a filtered copy.
+ *
+ * Uses Zip::Archive::replace(), Zip::Archive::rename(), Zip::Archive::remove(),
+ * the "collect first, delete afterwards" rule, and Zip::Archive::copyFrom().
+ */
+
+/**
+ * @example 06_encrypted_archive.cpp
+ * AES-256 encryption with the password taken from the environment.
+ *
+ * Shows feature detection with Zip::Archive::encryptionSupported(),
+ * Zip::Archive::setEncryption(), Zip::Entry::openEncrypted(), and how a missing
+ * and a wrong password differ (`ZIP_ER_NOPASSWD` versus `ZIP_ER_WRONGPASSWD`).
+ * See @ref security before relying on it.
+ */
+
+/**
+ * @example 07_verify_and_tail.cpp
+ * Streaming verification and reading the tail of an entry.
+ *
+ * Uses Zip::File::read() in chunks, Zip::File::seekable() and Zip::File::seek().
+ * Handles WinZip AES entries, which store no CRC.
+ */
+
+/**
+ * @example 08_secure_backup.cpp
+ * A complete backup tool written only with the @ref zip_highlevel "high-level API".
+ *
+ * Commands: `pack`, `list`, `cat`, `unpack`, `verify`, `passwd`. Uses
+ * Zip::archiveDirectory(), Zip::listEntries(), Zip::formatListing(),
+ * Zip::readBytes(), Zip::extractArchive(), Zip::verifyArchive(),
+ * Zip::changeProtection() and Zip::passwordFromEnv(), with a progress bar and
+ * a verified write.
+ */

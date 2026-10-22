@@ -1,0 +1,134 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Claudio
+
+# Doxyfile for ZipWrapper (written for Doxygen 1.9.8).
+#
+# Build the documentation (needs doxygen and graphviz):
+#     doxygen Doxyfile            ->  build-docs/html/index.html
+# or, with CMake:
+#     cmake -S . -B build -DTK4CPP_ZIP_BUILD_DOCS=ON
+#     cmake --build build --target docs
+#
+# Warnings are treated as errors on purpose: an undocumented public symbol, a
+# missing @param, a broken @ref or a @snippet that no longer exists fails the
+# build, so the documentation cannot silently rot.
+
+#---------------------------------------------------------------------------
+# Project
+#---------------------------------------------------------------------------
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "ZipWrapper"
+PROJECT_NUMBER         = 1.0.0
+PROJECT_BRIEF          = "C++23 RAII wrapper around libzip (static and shared library)"
+# Doxygen creates only the last path component, so keep this one level deep.
+OUTPUT_DIRECTORY       = build-docs
+CREATE_SUBDIRS         = NO
+OUTPUT_LANGUAGE        = English
+
+#---------------------------------------------------------------------------
+# Parsing
+#---------------------------------------------------------------------------
+JAVADOC_AUTOBRIEF      = YES
+MULTILINE_CPP_IS_BRIEF = NO
+INHERIT_DOCS           = YES
+TAB_SIZE               = 4
+MARKDOWN_SUPPORT       = YES
+TOC_INCLUDE_HEADINGS   = 3
+AUTOLINK_SUPPORT       = YES
+BUILTIN_STL_SUPPORT    = YES
+CASE_SENSE_NAMES       = YES
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+# Lets the headers hide implementation details from the documentation.
+PREDEFINED             = ZIPWRAPPER_DOXYGEN=1 \
+                         ZIPWRAPPER_API= \
+                         ZIPWRAPPER_DISABLE_DLL_WARNINGS_BEGIN= \
+                         ZIPWRAPPER_DISABLE_DLL_WARNINGS_END=
+
+#---------------------------------------------------------------------------
+# What is extracted
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = NO
+EXTRACT_ANON_NSPACES   = NO
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+HIDE_FRIEND_COMPOUNDS  = YES
+SHOW_INCLUDE_FILES     = YES
+SHOW_NAMESPACES        = YES
+SORT_MEMBER_DOCS       = NO
+SORT_BRIEF_DOCS        = NO
+GENERATE_TODOLIST      = NO
+GENERATE_TESTLIST      = NO
+GENERATE_BUGLIST       = NO
+GENERATE_DEPRECATEDLIST= NO
+SHOW_USED_FILES        = NO
+SHOW_FILES             = YES
+STRIP_FROM_PATH        = include
+STRIP_FROM_INC_PATH    = include
+
+#---------------------------------------------------------------------------
+# Warnings: strict on purpose
+#---------------------------------------------------------------------------
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = YES
+WARN_NO_PARAMDOC       = YES
+WARN_IF_UNDOC_ENUM_VAL = YES
+WARN_AS_ERROR          = FAIL_ON_WARNINGS
+WARN_FORMAT            = "$file:$line: $text"
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+INPUT                  = include docs
+FILE_PATTERNS          = *.h *.md *.dox
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = */snippets/*
+# Implementation details are not part of the public API.
+EXCLUDE_SYMBOLS        = Zip::detail Zip::detail::*
+EXAMPLE_PATH           = examples docs/snippets
+EXAMPLE_PATTERNS       = *.cpp
+EXAMPLE_RECURSIVE      = NO
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = NO
+REFERENCED_BY_RELATION = NO
+REFERENCES_RELATION    = NO
+
+#---------------------------------------------------------------------------
+# HTML output
+#---------------------------------------------------------------------------
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+HTML_COLORSTYLE        = AUTO_LIGHT
+GENERATE_TREEVIEW      = YES
+FULL_SIDEBAR           = NO
+DISABLE_INDEX          = NO
+SEARCHENGINE           = YES
+SERVER_BASED_SEARCH    = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+
+#---------------------------------------------------------------------------
+# Diagrams (needs graphviz)
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = NO
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+GROUP_GRAPHS           = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+GRAPHICAL_HIERARCHY    = YES
+DIRECTORY_GRAPH        = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+UML_LOOK               = NO
