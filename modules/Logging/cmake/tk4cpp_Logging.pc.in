@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: TK4CPP::Logging
+Description: @PROJECT_DESCRIPTION@
+Version: @PROJECT_VERSION@
+Requires: @TK4CPP_Logging_PC_REQUIRES@
+Libs: -L${libdir} -ltk4cpp_logging
+Cflags: -I${includedir} @TK4CPP_Logging_PC_CFLAGS@

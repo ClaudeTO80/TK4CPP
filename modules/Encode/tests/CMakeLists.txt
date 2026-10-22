@@ -1,0 +1,3 @@
+add_executable(TK4CPP_Encode_tests test_encode.cpp)
+target_link_libraries(TK4CPP_Encode_tests PRIVATE TK4CPP::Encode)
+add_test(NAME TK4CPP_Encode_tests COMMAND TK4CPP_Encode_tests)
