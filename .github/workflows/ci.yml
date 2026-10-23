@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: "Linux GCC",      os: ubuntu-24.04,   cc: gcc,   cxx: g++ }
+          - { name: "Linux Clang",    os: ubuntu-24.04,   cc: clang, cxx: clang++ }
+          - { name: "Windows MSVC",   os: windows-latest }
+          - { name: "macOS AppleClang", os: macos-latest, extra: "-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DTK4CPP_WARNINGS_AS_ERRORS=ON
+          ${{ matrix.cxx && format('-DCMAKE_CXX_COMPILER={0}', matrix.cxx) || '' }}
+          ${{ matrix.extra }}
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -S . -B build -DTK4CPP_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
