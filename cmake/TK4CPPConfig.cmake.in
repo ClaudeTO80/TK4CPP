@@ -1,0 +1,42 @@
+@PACKAGE_INIT@
+
+# TK4CPP package configuration.
+#
+#   find_package(TK4CPP REQUIRED COMPONENTS Utility JWT)
+#   target_link_libraries(app PRIVATE TK4CPP::Utility)
+#
+# Without COMPONENTS every installed module is loaded. When the package was built with both
+# static and shared libraries, TK4CPP::<Module> is the shared one and TK4CPP::<Module>_static
+# the static one.
+
+include(CMakeFindDependencyMacro)
+
+set(_TK4CPP_AVAILABLE_COMPONENTS @TK4CPP_BUILT_MODULES_STR@)
+
+# Loads one module (and, through its Deps file, the modules it depends on). Safe to call repeatedly.
+# It has to be a macro: imported targets created by find_package() must stay visible to the caller.
+# The variable names are prefixed on purpose: Find modules run in this scope and may reuse short
+# names such as _comp for their own loops.
+macro(_tk4cpp_load_component _TK4CPP_load_name)
+    if(NOT TARGET TK4CPP::${_TK4CPP_load_name} AND NOT TARGET TK4CPP::${_TK4CPP_load_name}_static)
+        include("${CMAKE_CURRENT_LIST_DIR}/TK4CPP_${_TK4CPP_load_name}Deps.cmake")
+        include("${CMAKE_CURRENT_LIST_DIR}/TK4CPP_${_TK4CPP_load_name}Targets.cmake")
+    endif()
+endmacro()
+
+if(NOT TK4CPP_FIND_COMPONENTS)
+    set(TK4CPP_FIND_COMPONENTS ${_TK4CPP_AVAILABLE_COMPONENTS})
+endif()
+
+set(_TK4CPP_requested ${TK4CPP_FIND_COMPONENTS})
+foreach(_TK4CPP_c IN LISTS _TK4CPP_requested)
+    if(_TK4CPP_c IN_LIST _TK4CPP_AVAILABLE_COMPONENTS)
+        _tk4cpp_load_component(${_TK4CPP_c})
+        set(TK4CPP_${_TK4CPP_c}_FOUND TRUE)
+    else()
+        set(TK4CPP_${_TK4CPP_c}_FOUND FALSE)
+        set(TK4CPP_${_TK4CPP_c}_NOT_FOUND_MESSAGE "TK4CPP was not built with the ${_TK4CPP_c} module")
+    endif()
+endforeach()
+
+check_required_components(TK4CPP)
