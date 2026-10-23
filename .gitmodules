@@ -7,3 +7,6 @@
 [submodule "3rdParty/libzip"]
 	path = 3rdParty/libzip
 	url = https://github.com/nih-at/libzip
+[submodule "3rdParty/jwt-cpp"]
+	path = 3rdParty/jwt-cpp
+	url = https://github.com/Thalhammer/jwt-cpp
