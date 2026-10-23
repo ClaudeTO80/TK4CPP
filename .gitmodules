@@ -4,3 +4,6 @@
 [submodule "3rdParty/libxml2"]
 	path = 3rdParty/libxml2
 	url = https://github.com/GNOME/libxml2
+[submodule "3rdParty/libzip"]
+	path = 3rdParty/libzip
+	url = https://github.com/nih-at/libzip
