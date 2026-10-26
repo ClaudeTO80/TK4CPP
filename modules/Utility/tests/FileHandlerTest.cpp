@@ -4,8 +4,10 @@
 #include <string>
 
 #include "TK4CPP/Utility/FileHandler.h"
+#include "TK4CPP/Utility/FolderHandler.hpp"
 
 using TK4CPP::Utility::FileHandler;
+using TK4CPP::Utility::FolderHandler;
 namespace fs = std::filesystem;
 
 namespace
@@ -33,11 +35,11 @@ TEST_F(FileHandlerTest, DistinguishesFilesFromFolders)
     FileHandler::writeStringToFile(file, "x");
 
     EXPECT_TRUE(FileHandler::isFile(file));
-    EXPECT_FALSE(FileHandler::isFolder(file));
-    EXPECT_TRUE(FileHandler::isFolder(dir.string()));
+    EXPECT_FALSE(FolderHandler::isFolder(file));
+    EXPECT_TRUE(FolderHandler::isFolder(dir.string()));
     EXPECT_FALSE(FileHandler::isFile(dir.string()));
     EXPECT_FALSE(FileHandler::isFile((dir / "missing").string()));
-    EXPECT_FALSE(FileHandler::isFolder((dir / "missing").string()));
+    EXPECT_FALSE(FolderHandler::isFolder((dir / "missing").string()));
 }
 
 TEST_F(FileHandlerTest, WritesAndReadsBack)
@@ -82,12 +84,12 @@ TEST_F(FileHandlerTest, CopyFailsIfDestinationExistsByDefault)
 TEST_F(FileHandlerTest, CreatesAndRemovesFolders)
 {
     const auto nested = (dir / "a" / "b" / "c").string();
-    EXPECT_TRUE(FileHandler::createFolders(nested).first);
-    EXPECT_TRUE(FileHandler::isFolder(nested));
+    EXPECT_TRUE(FolderHandler{}.create(nested));
+    EXPECT_TRUE(FolderHandler::isFolder(nested));
 
-    EXPECT_FALSE(FileHandler::removeFolder((dir / "a").string(), false).first);  // not empty
-    EXPECT_TRUE(FileHandler::removeFolder((dir / "a").string(), true).first);
-    EXPECT_FALSE(FileHandler::isFolder((dir / "a").string()));
+    EXPECT_FALSE(FolderHandler{}.remove(dir / "a", false));  // not empty
+    EXPECT_TRUE(FolderHandler{}.remove(dir / "a", true));
+    EXPECT_FALSE(FolderHandler::isFolder((dir / "a").string()));
 }
 
 TEST(FileHandlerSizeToString, ScalesThroughTheUnits)
