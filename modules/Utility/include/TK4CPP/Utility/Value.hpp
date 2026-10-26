@@ -256,8 +256,6 @@ namespace TK4CPP {
 
 			[[nodiscard]] std::string to_string() const;
 
-			friend std::ostream& operator<<(std::ostream& os, const FileArtifact& fa);
-
 		private:
 			std::filesystem::path         source_path_;
 			std::string                   mime_type_{ "application/octet-stream" };
@@ -407,8 +405,6 @@ namespace TK4CPP {
 
 			[[nodiscard]] const VariableValue& raw()       const noexcept;
 			[[nodiscard]] VariableValue& raw()             noexcept;
-
-			friend std::ostream& operator<<(std::ostream& os, const Value& v);
 
 		private:
 			VariableValue data_;
