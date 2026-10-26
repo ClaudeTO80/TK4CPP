@@ -512,7 +512,7 @@ namespace TK4CPP
                         if (!createParent)
                             return false;
                         // Create full directory tree if requested
-                        if (!TK4CPP::Utility::FolderHandler::create(parent).first) {
+                        if (!TK4CPP::Utility::FolderHandler{}.create(parent)) {
                             // Failed to create directory
                             return false;
                         }
