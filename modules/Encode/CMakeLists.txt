@@ -16,10 +16,17 @@ tk4cpp_add_module(
     EXCLUDE_HEADERS ${_exclude_headers}
 )
 
-# Ensure the Windows DLL exports every public and out-of-line symbol.
-if(TARGET Encode)
-    set_property(TARGET Encode PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
-if(TARGET TK4CPP_Encode)
-    set_property(TARGET TK4CPP_Encode PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
+# The public headers carry no export macros: the whole public API is meant to be exported.
+# Windows gets this from WINDOWS_EXPORT_ALL_SYMBOLS; GCC/Clang need the default visibility,
+# otherwise the framework's -fvisibility=hidden leaves the shared library without its symbols.
+foreach(_t TK4CPP_Encode TK4CPP_Encode_static)
+    if(TARGET ${_t})
+        get_target_property(_type ${_t} TYPE)
+        if(_type STREQUAL "SHARED_LIBRARY")
+            set_target_properties(${_t} PROPERTIES
+                WINDOWS_EXPORT_ALL_SYMBOLS ON
+                CXX_VISIBILITY_PRESET      default
+                VISIBILITY_INLINES_HIDDEN  OFF)
+        endif()
+    endif()
+endforeach()
