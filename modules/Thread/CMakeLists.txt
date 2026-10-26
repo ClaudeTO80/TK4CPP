@@ -24,11 +24,15 @@ tk4cpp_add_module(
     EXCLUDE_HEADERS ${_exclude_headers}
 )
 
-# Ensure the Windows DLL exports every public and out-of-line symbol. Explicit
-# TK4CPP_TP_API annotations remain useful for non-MSVC visibility control.
-if(TARGET Thread)
-    set_property(TARGET Thread PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
-if(TARGET TK4CPP_Thread)
-    set_property(TARGET TK4CPP_Thread PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
+# Export.h selects TK4CPP_TP_API from TK4CPP_TP_SHARED / TK4CPP_TP_BUILDING, which the
+# framework helper does not define: without them a shared build hides every symbol.
+foreach(_t TK4CPP_Thread TK4CPP_Thread_static)
+    if(TARGET ${_t})
+        get_target_property(_type ${_t} TYPE)
+        if(_type STREQUAL "SHARED_LIBRARY")
+            target_compile_definitions(${_t} PUBLIC TK4CPP_TP_SHARED PRIVATE TK4CPP_TP_BUILDING)
+            # Ensure the Windows DLL exports every public and out-of-line symbol.
+            set_property(TARGET ${_t} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
+        endif()
+    endif()
+endforeach()

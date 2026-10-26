@@ -1,5 +1,5 @@
 add_executable(test_threadpool test_threadpool.cpp)
-target_link_libraries(test_threadpool PRIVATE TK4CPP::ThreadPool)
+target_link_libraries(test_threadpool PRIVATE TK4CPP::Thread)
 set_target_properties(test_threadpool PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     FOLDER "TK4CPP/ThreadPool/Tests")
