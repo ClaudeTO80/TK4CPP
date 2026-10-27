@@ -1,5 +1,14 @@
 # TK4CPP — Toolkit 4 C++
 
+[![CI](https://github.com/ClaudeTO80/TK4CPP/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ClaudeTO80/TK4CPP/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/ClaudeTO80/TK4CPP)](LICENSE)
+[![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=c%2B%2B&logoColor=white)](https://en.cppreference.com/w/cpp/23)
+[![CMake ≥ 3.23](https://img.shields.io/badge/CMake-%E2%89%A5%203.23-064F8C?logo=cmake&logoColor=white)](https://cmake.org)
+[![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)](#build)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)](CMakeLists.txt)
+[![Status](https://img.shields.io/badge/status-early%20development-orange)](#build-status)
+[![Last commit](https://img.shields.io/github/last-commit/ClaudeTO80/TK4CPP)](https://github.com/ClaudeTO80/TK4CPP/commits/main)
+
 TK4CPP is a modular, cross-compiler C++ framework. It offers high-level, easy-to-use APIs on top of
 optimised low-level implementations. Some modules are written from scratch, others are consistent,
 modern-C++ wrappers around well-known third-party libraries (spdlog, libxml2, libzip, jwt-cpp).
@@ -7,9 +16,8 @@ modern-C++ wrappers around well-known third-party libraries (spdlog, libxml2, li
 Every module is a separate CMake component with its own namespace, can be enabled or disabled
 independently, and is built as a shared library, a static library, or both.
 
-> **Status: early development (0.1.0).** APIs may still change, and the repository is in the middle
-> of integrating several modules into one build. See [Build status](#build-status) for what has
-> actually been verified and the known problems.
+> **Status: early development (0.1.0).** APIs may still change. See [Build status](#build-status)
+> for what has actually been verified.
 
 - Language: C++23 (`std::expected`, `std::move_only_function`, `std::jthread`, ...)
 - Build system: CMake ≥ 3.23, with `find_package(TK4CPP)` support
@@ -71,7 +79,9 @@ git submodule update --init --recursive
 | `3rdParty/jwt-cpp`    | `JWT`     | always when `JWT` is built (header-only) |
 | `3rdParty/spdlog`     | `Logging` | unless `TK4CPP_LOGGING_USE_SYSTEM_SPDLOG=ON` (header-only) |
 | `3rdParty/libxml2`    | `XML`     | only when no suitable system libxml2 ≥ 2.9 is found (see [XML](#xml)) |
-| `3rdParty/libzip`     | `Zip`     | source only: the `Zip` build does **not** consume it, see [Zip](#zip) |
+| `3rdParty/libzip`     | `Zip`     | only when no suitable installed libzip ≥ 1.11 is found (see [Zip](#zip)) |
+
+Without the submodules the configure step fails (for example `Logging: bundled spdlog not found`).
 
 ## Build
 
@@ -81,7 +91,6 @@ Requirements:
 - A C++23 compiler with a standard library that ships `<expected>` and `std::move_only_function`
   (verified: GCC 13.3; GCC 13+, MSVC 2022 and Clang with a recent libc++ are the intended targets)
 - OpenSSL development files (`JWT`)
-- libzip ≥ 1.11 (`Zip` only, installed separately)
 
 ```sh
 cmake --preset release
@@ -108,7 +117,7 @@ Presets (`CMakePresets.json`): `debug` (warnings as errors), `release`, `debug-c
 | `TK4CPP_BUILD_STATIC` | `ON` (follows `BUILD_SHARED_LIBS` when set) | Build static libraries |
 | `TK4CPP_BUILD_<MODULE>` | `ON` (`Lua`: `OFF`) | Enable one module, e.g. `TK4CPP_BUILD_JWT=OFF` |
 | `TK4CPP_BUILD_TESTS` | `ON` when top-level | GoogleTest suites (system package, otherwise v1.15.2 is downloaded) |
-| `TK4CPP_BUILD_DOCS` | `OFF` | Doxygen target `docs` (needs a `docs/CMakeLists.txt`, not in the tree yet) |
+| `TK4CPP_BUILD_DOCS` | `OFF` | Doxygen target `docs` (needs a root `docs/CMakeLists.txt`, not in the tree yet) |
 | `TK4CPP_INSTALL` | `ON` when top-level | Generate install rules and the CMake package |
 | `TK4CPP_CXX_STANDARD` | `23` | `20` or `23` (only `23` has been exercised) |
 | `TK4CPP_WARNINGS_AS_ERRORS` | `OFF` | `-Werror` / `/WX` |
@@ -123,6 +132,8 @@ Module-specific options:
 | ------ | ------ | ------- |
 | `TK4CPP_LIBXML2_SOURCE` = `AUTO` \| `SYSTEM` \| `VENDORED` | XML | Where libxml2 comes from (default `AUTO`) |
 | `TK4CPP_LIBXML2_ROOT`, `_DIR`, `_INCLUDE_DIR`, `_LIBRARY`, `_STATIC_LIB`, `_EXTRA_LIBS` | XML | Use a pre-installed libxml2, see [XML](#xml) |
+| `TK4CPP_LIBZIP_SOURCE` = `AUTO` \| `SYSTEM` \| `VENDORED` | Zip | Where libzip comes from (default `AUTO`) |
+| `TK4CPP_LIBZIP_ROOT`, `_DIR`, `_INCLUDE_DIR`, `_LIBRARY`, `_EXTRA_LIBS` | Zip | Use a pre-installed libzip, see [Zip](#zip) |
 | `TK4CPP_LOGGING_USE_SYSTEM_SPDLOG` | Logging | Use `find_package(spdlog)` instead of the bundled copy |
 | `TK4CPP_LOGGING_BUILD_TESTS`, `_BUILD_EXAMPLES`, `_INSTALL` | Logging | Per-module switches |
 | `TK4CPP_PROCESS_SANITIZE` | Process | e.g. `address;undefined` or `thread` (GCC/Clang) |
@@ -131,40 +142,38 @@ Module-specific options:
 
 ## Build status
 
-Last verified on **2026-10-23** against commit `32500b0` on Ubuntu 24.04 with GCC 13.3, CMake 3.28,
-Ninja, Release, with the submodules initialised and libzip 1.11 built from `3rdParty/libzip`
-and installed separately.
+Continuous integration (`.github/workflows/ci.yml`) builds and tests every push to `main` and every
+pull request on Linux (GCC, Clang), Windows (MSVC, MinGW-w64) and macOS (AppleClang), with
+`TK4CPP_WARNINGS_AS_ERRORS=ON`. The badge at the top shows the current result.
 
-| Module    | Library builds | Tests | Notes |
-| --------- | -------------- | ----- | ----- |
-| `Utility` | yes | 21 pass; `FileHandlerTest.cpp` does **not compile** | The test file still uses folder functions (`isFolder`, `createFolders`, `removeFolder`) that are no longer members of `FileHandler`; the other test files pass when it is left out |
-| `JWT`     | yes | pass | |
-| `XML`     | **no** | not built | `XML.h` calls `Utility::FolderHandler::create(parent)` as if it were static; it is a non-static member now |
-| `Encode`  | yes | pass with static libraries; **shared test fails to link** | The public classes are not decorated with `TK4CPP_ENCODE_EXPORT`, so no symbols are exported from the shared library on Linux |
-| `Logging` | yes | pass | |
-| `Process` | yes | pass (also on the fork/exec path) | |
-| `Thread`  | yes | pass with static libraries; **shared test fails to link** | Test and example CMake files link `TK4CPP::ThreadPool`, but the target is `TK4CPP::Thread` — this aborts the configure step whenever `TK4CPP_BUILD_TESTS=ON`; the shared library does not export `TK4CPP_TP_API` symbols |
-| `Zip`     | yes (static) | pass | Requires an installed libzip ≥ 1.11 (`CMAKE_PREFIX_PATH`) |
+Last verified locally on **2026-10-27** against commit `34069e8`: Ubuntu 24.04, GCC 13.3, CMake 3.28.3,
+Ninja 1.11.1, Release, `TK4CPP_WARNINGS_AS_ERRORS=ON`, submodules initialised, default options
+(shared and static variants of every module, tests on, all eight modules).
 
-Practical consequences today:
+| Step | Result |
+| ---- | ------ |
+| Configure | succeeds; modules `Logging;Utility;JWT;XML;Encode;Process;Thread;Zip` |
+| Build | 297 of 297 steps, 0 errors, about 2 min 34 s wall time |
+| `ctest` | **110 of 110 tests pass** (about 4.5 s) |
+| Install + consumer project | `find_package(TK4CPP COMPONENTS Utility Encode Thread)` builds and runs a program that links `TK4CPP::Encode` |
 
-- `TK4CPP_BUILD_TESTS=ON` stops at configure time because of the `Thread` target name. Either fix
-  `modules/Thread/tests/CMakeLists.txt` and `modules/Thread/examples/CMakeLists.txt`
-  (`TK4CPP::ThreadPool` → `TK4CPP::Thread`) or build without tests.
-- `XML` does not compile; use `-DTK4CPP_BUILD_XML=OFF`.
-- A configuration that builds cleanly, including the `debug` preset with `-Werror`:
+The 110 ctest entries cover every module: GoogleTest cases (Logging, Utility, JWT, XML), one
+GoogleTest executable each for Encode and Thread, `process_tests` and `process_tests_forkpath` for
+Process, and the Zip test programs (static and shared) plus the compiled documentation snippets.
 
-  ```sh
-  cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-        -DTK4CPP_BUILD_TESTS=OFF -DTK4CPP_BUILD_XML=OFF -DTK4CPP_BUILD_ZIP=OFF
-  cmake --build build
-  ```
+**Not verified locally:** Windows, macOS, Clang, `TK4CPP_CXX_STANDARD=20`, sanitizer builds, the
+Doxygen build, and the CMake presets other than the plain configuration above.
 
-- To run the tests that do work, use static libraries only (`-DTK4CPP_BUILD_SHARED=OFF`) after
-  correcting the `Thread` target name.
+Known limitations:
 
-**Not verified:** Windows, macOS, Clang, `TK4CPP_CXX_STANDARD=20`, sanitizer builds, the Doxygen
-build, and the shared-library variants of `Encode` and `Thread`.
+- The aggregate package does not know `Logging`, `Process` and `Zip`; see
+  [Installed package](#installed-package) for the workaround (checked: `find_package(TK4CPP COMPONENTS
+  Logging)` still fails against an installed tree).
+- The vendored libzip is built without any crypto backend (`ENABLE_OPENSSL=OFF`), so AES-protected
+  archives need an installed libzip built with OpenSSL, see [Zip](#zip).
+- `TK4CPP_BUILD_DOCS=ON` only prints a warning: there is no root `docs/CMakeLists.txt` yet, so the
+  `docs` target does not exist and the `Documentation` workflow cannot build it.
+- `JWT` uses a hardcoded HS256 key, see [JWT](#jwt).
 
 ## Using TK4CPP in your project
 
@@ -185,7 +194,7 @@ when both variants were built, and `TK4CPP::<Module>_static` the static one.
 **Known limitation:** `Logging`, `Process` and `Zip` install their own package files
 (`TK4CPP_LoggingConfig.cmake`, ...) but not the `TK4CPP_<Module>Deps.cmake` files the aggregate
 `TK4CPPConfig.cmake` expects, so `find_package(TK4CPP COMPONENTS Logging)` fails. Load them one by
-one and point CMake at the shared package directory (verified):
+one and point CMake at the shared package directory:
 
 ```cmake
 set(_dir /opt/tk4cpp/lib/cmake/TK4CPP)
@@ -197,8 +206,6 @@ find_package(TK4CPP_Process REQUIRED)
 target_link_libraries(app PRIVATE TK4CPP::Logging TK4CPP::Process)
 ```
 
-(`Zip` additionally needs libzip to be findable through `CMAKE_PREFIX_PATH`.)
-
 ### In-tree
 
 ```cmake
@@ -209,8 +216,6 @@ target_link_libraries(app PRIVATE TK4CPP::Utility TK4CPP::Process)
 The same `TK4CPP::<Module>` aliases exist in-tree.
 
 ## Module guide
-
-The snippets below were compiled and run against a static build (GCC 13.3) except where noted.
 
 ### Utility
 
@@ -262,8 +267,6 @@ Namespace `TK4CPP::XML`, headers in `TK4CPP/XML/`. Abstract interfaces (`IXmlDoc
 `LibXml2Attribute`) and an `XMLManager` helper. libxml2 is a private dependency: no libxml2 header is
 part of the public API. The design goal is XXE-safe parsing without network access.
 
-**This module does not compile at the current HEAD** (see [Build status](#build-status)).
-
 libxml2 selection (`TK4CPP_LIBXML2_SOURCE`):
 
 | Value | Behaviour |
@@ -309,7 +312,7 @@ Namespace `TK4CPP::Encode`, headers `Base64.h`, `UrlEncoding.h`, `Io.h`, `Error.
 #include <TK4CPP/Encode/UrlEncoding.h>
 using namespace TK4CPP::Encode;
 
-std::string enc = Base64::encodeDefault("Hello, TK4CPP!");
+std::string enc = Base64::encodeDefault("Hello, TK4CPP!");     // "SGVsbG8sIFRLNENQUCE="
 if (auto dec = Base64{}.decodeToString(enc)) { /* *dec == "Hello, TK4CPP!" */ }
 
 auto q = UrlEncoding::encode("a b&c", UrlEncoding::Mode::Component);   // "a%20b%26c"
@@ -400,7 +403,7 @@ pool.shutdown();
 ```
 
 Event handlers run synchronously on the emitting thread and may run concurrently; do not call
-`shutdown()` from a pool thread. The Windows export path (`TK4CPP_TP_API`) is not verified.
+`shutdown()` from a pool thread. The Windows export path (`TK4CPP_TP_API`) is covered by CI only.
 
 ### Zip
 
@@ -416,15 +419,27 @@ The full manual lives in `modules/Zip/docs/` (Doxygen) and the module README
 - Safe extraction: absolute paths, `..` components and symlink escapes are refused.
 - Capabilities are detectable at run time because they depend on how libzip was built.
 
-It needs **libzip ≥ 1.11** installed and findable (`find_package(libzip 1.11 CONFIG REQUIRED)`);
-the `3rdParty/libzip` submodule is only a source tree you can build and install yourself:
+libzip ≥ 1.11 comes from one of two places (`TK4CPP_LIBZIP_SOURCE`):
+
+| Value | Behaviour |
+| ----- | --------- |
+| `AUTO` (default) | an installed libzip when found, otherwise `3rdParty/libzip` |
+| `SYSTEM` | an installed libzip only, error if missing |
+| `VENDORED` | always the bundled copy (built statically, without any crypto backend) |
+
+To use an installed libzip, pass `-DCMAKE_PREFIX_PATH=<prefix>` or one of `TK4CPP_LIBZIP_ROOT`,
+`TK4CPP_LIBZIP_DIR`, or `TK4CPP_LIBZIP_INCLUDE_DIR` + `TK4CPP_LIBZIP_LIBRARY`
+(+ `TK4CPP_LIBZIP_EXTRA_LIBS`). Combining these with `VENDORED` is an error.
+
+AES encryption needs a libzip built with OpenSSL (or another crypto backend), which the vendored copy
+does not have. Build and install your own and point the module at it:
 
 ```sh
 cmake -S 3rdParty/libzip -B build-libzip -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON \
       -DENABLE_OPENSSL=ON -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF \
       -DCMAKE_INSTALL_PREFIX=/opt/libzip
 cmake --build build-libzip && cmake --install build-libzip
-cmake -S . -B build -DCMAKE_PREFIX_PATH=/opt/libzip
+cmake -S . -B build -DTK4CPP_LIBZIP_SOURCE=SYSTEM -DTK4CPP_LIBZIP_ROOT=/opt/libzip
 ```
 
 ZIP encryption protects contents only (names, sizes and dates stay visible) and the library has not
@@ -433,6 +448,7 @@ been security-audited; read `modules/Zip/docs/security.md` before relying on it.
 ## Repository layout
 
 ```
+.github/workflows/        ci.yml (build + test matrix), docs.yml (Doxygen to GitHub Pages)
 CMakeLists.txt            root: options, module list, install and package config
 CMakePresets.json         debug, release, debug-clang, static, docs, msvc
 cmake/
