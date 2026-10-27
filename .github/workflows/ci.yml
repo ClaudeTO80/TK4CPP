@@ -9,33 +9,51 @@ jobs:
   build:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: "Linux GCC",      os: ubuntu-24.04,   cc: gcc,   cxx: g++ }
-          - { name: "Linux Clang",    os: ubuntu-24.04,   cc: clang, cxx: clang++ }
-          - { name: "Windows MSVC",   os: windows-latest }
-          - { name: "macOS AppleClang", os: macos-latest, extra: "-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" }
+          - { name: "Linux GCC",          os: ubuntu-24.04,   shell: bash, cc: gcc,   cxx: g++ }
+          - { name: "Linux Clang",        os: ubuntu-24.04,   shell: bash, cc: clang, cxx: clang++ }
+          - { name: "Windows MSVC",       os: windows-latest, shell: pwsh }
+          - { name: "Windows MinGW-w64",  os: windows-latest, shell: "msys2 {0}", msystem: MINGW64 }
+          - { name: "macOS AppleClang",   os: macos-latest,   shell: bash, extra: "-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" }
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive 
-      - name: Install zlib (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
+          submodules: recursive
+
+      - name: Set up MSYS2 (MinGW)
+        if: matrix.msystem
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-libxml2
+
+      - name: Install zlib (Windows MSVC)
+        if: runner.os == 'Windows' && !matrix.msystem
         run: vcpkg install zlib:x64-windows-static-md
 
-      - name: Configure (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Configure (Linux/macOS/MinGW)
+        if: runner.os != 'Windows' || matrix.msystem
         run: >
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           -DTK4CPP_WARNINGS_AS_ERRORS=ON
           ${{ matrix.cxx && format('-DCMAKE_CXX_COMPILER={0}', matrix.cxx) || '' }}
           ${{ matrix.extra }}
 
-      - name: Configure (Windows)
-        if: runner.os == 'Windows'
+      - name: Configure (Windows MSVC)
+        if: runner.os == 'Windows' && !matrix.msystem
         run: >
           cmake -S . -B build -DTK4CPP_WARNINGS_AS_ERRORS=ON
           -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
@@ -46,38 +64,3 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
-
-  mingw:
-    name: Windows MinGW-w64
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up MSYS2 (MINGW64)
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-zlib
-            mingw-w64-x86_64-openssl
-            mingw-w64-x86_64-libxml2
-
-      - name: Configure
-        run: >
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          -DTK4CPP_WARNINGS_AS_ERRORS=ON
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Test
-        run: ctest --test-dir build --output-on-failure
