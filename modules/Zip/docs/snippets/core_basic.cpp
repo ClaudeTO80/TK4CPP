@@ -50,6 +50,8 @@ int main() {
 
     const bool ok = data.size() == 1000 && fs::exists(dir / "out" / "readme.txt") &&
                     fs::exists(dir / "big.zip");
+    // An open archive keeps its file open: Windows cannot delete it until it is closed.
+    in.close();
     fs::remove_all(dir);
     return ok ? 0 : 1;
 }

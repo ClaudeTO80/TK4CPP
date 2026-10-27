@@ -182,6 +182,11 @@ if(TK4CPP_PROCESS_BUILD_TESTS)
     add_executable(process_test_helper tests/test_helper.cpp)
     set_target_properties(process_test_helper PROPERTIES CXX_EXTENSIONS OFF FOLDER "TK4CPP/Process")
     target_compile_features(process_test_helper PRIVATE cxx_std_${TK4CPP_CXX_STANDARD})
+    if(MINGW)
+        # The tests start the helper with a stripped environment (PATH unset, empty, ...): a MinGW
+        # helper linked dynamically could not find libstdc++-6.dll / libwinpthread-1.dll any more.
+        target_link_options(process_test_helper PRIVATE -static)
+    endif()
     if(WIN32)
         target_link_libraries(process_test_helper PRIVATE shell32)
         target_compile_definitions(process_test_helper PRIVATE UNICODE _UNICODE)

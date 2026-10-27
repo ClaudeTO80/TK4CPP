@@ -209,6 +209,7 @@ void test_modify_existing() {
     CHECK(toString(r.entry("renamed").readAll()) == "3");
     CHECK(!r.contains("three"));
     CHECK(!r.contains("extra"));
+    r.close();  // Windows cannot replace a.zip below while this handle keeps it open
 
     // overwrite flag on add
     {

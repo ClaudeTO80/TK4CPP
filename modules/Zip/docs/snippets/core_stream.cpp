@@ -49,6 +49,10 @@ int main() {
 
     const bool ok = total == 200000 && std::to_integer<int>(tail[7]) == 999 % 251;
     std::cout << "streamed " << total << " bytes\n";
+    // An open archive keeps its file open: Windows cannot delete it until it is closed.
+    file.close();
+    stored.close();
+    archive.close();
     fs::remove_all(dir);
     return ok ? 0 : 1;
 }

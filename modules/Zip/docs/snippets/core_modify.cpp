@@ -53,6 +53,9 @@ int main() {
     auto check = Zip::Archive::open(copyPath, Zip::OpenFlag::ReadOnly);
     const bool ok = check.size() == 2 && check.contains("config.ini") && check.contains("new.txt");
     std::cout << "entries after update and copy: " << check.size() << '\n';
+    // An open archive keeps its file open: Windows cannot delete it until it is closed.
+    check.close();
+    src.close();
     fs::remove_all(dir);
     return ok ? 0 : 1;
 }

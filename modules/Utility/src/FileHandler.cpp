@@ -126,7 +126,7 @@ std::filesystem::path FileHandler::writeStringToFile(const std::filesystem::path
 		}
 		case WriteBehavior::RenameNew: {
 			fs::path newName = generateSuffixedName(filePath);
-			std::ofstream ofs(newName.string(), std::ios::out | std::ios::trunc);
+			std::ofstream ofs(newName.string(), std::ios::out | std::ios::trunc | std::ios::binary);
 			if (!ofs) return "";
 			if (!robustWrite(ofs, content)) return "";
 			return newName.string();
@@ -137,7 +137,7 @@ std::filesystem::path FileHandler::writeStringToFile(const std::filesystem::path
 	}
 
 	// Write to the original path
-	std::ofstream ofs(path, std::ios::out | std::ios::trunc);
+	std::ofstream ofs(path, std::ios::out | std::ios::trunc | std::ios::binary);
 	if (!ofs) return "";
 	if (!robustWrite(ofs, content)) return "";
 	return path;
@@ -164,7 +164,7 @@ bool FileHandler::robustWrite(std::ofstream& ofs, const std::string& content) {
 	return false;
 }
 std::string FileHandler::readStringFromFile(const std::string& path) {
-	std::ifstream ifs(path, std::ios::in);
+	std::ifstream ifs(path, std::ios::in | std::ios::binary);
 	if (!ifs) return "";
 	std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 	return content;

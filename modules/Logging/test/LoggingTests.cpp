@@ -3,6 +3,7 @@
  * @brief Unit tests of the TK4CPP logging module.
  */
 
+#include <algorithm>
 #include <atomic>
 #include <filesystem>
 #include <fstream>
@@ -56,7 +57,13 @@ struct StringSink {
     std::ostringstream stream;
     std::shared_ptr<spdlog::sinks::sink> sink =
         std::make_shared<spdlog::sinks::ostream_sink_mt>(stream, true);
-    std::string str() const { return stream.str(); }
+    /// @brief Captured text with line endings normalised to "\n".
+    /// @note spdlog terminates records with "\r\n" on Windows and "\n" elsewhere.
+    std::string str() const {
+        std::string text = stream.str();
+        text.erase(std::remove(text.begin(), text.end(), '\r'), text.end());
+        return text;
+    }
 };
 
 std::string slurp(const fs::path& p) {
