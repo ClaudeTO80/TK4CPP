@@ -1,0 +1,72 @@
+# Doxygen configuration for TK4CPP. Generated into the build tree by docs/CMakeLists.txt;
+# edit this template, not the generated file.
+
+PROJECT_NAME           = "TK4CPP"
+PROJECT_NUMBER         = @PROJECT_VERSION@
+PROJECT_BRIEF          = "Toolkit 4 C++ - high-level C++ APIs backed by optimised low-level implementations"
+OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@
+OUTPUT_LANGUAGE        = English
+
+# ---- Input ---------------------------------------------------------------------------
+INPUT                  = @TK4CPP_DOXYGEN_INPUT@
+FILE_PATTERNS          = *.h *.hpp *.md
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = */wip/* */tests/* */3rdParty/* */build/*
+USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/docs/mainpage.md
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@
+STRIP_FROM_INC_PATH    = @TK4CPP_DOXYGEN_STRIP_PATHS@
+EXCLUDE_SYMBOLS        = *::detail *::detail::*
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+
+# ---- Language / macros ---------------------------------------------------------------
+# Export macros are noise in the rendered class signatures.
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = TK4CPP_UTILITY_EXPORT= \
+                         TK4CPP_JWT_EXPORT= \
+                         TK4CPP_XML_EXPORT= \
+                         "TK4CPP_LOGGING_EXPORT=" \
+                         "TK4CPP_DATALAYER_EXPORT=" \
+                         "TK4CPP_CHART_EXPORT=" \
+                         "TK4CPP_ARGSPARSE_EXPORT="
+CPP_CLI_SUPPORT        = NO
+BUILTIN_STL_SUPPORT    = YES
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = NO
+
+# ---- Diagnostics ---------------------------------------------------------------------
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+WARN_AS_ERROR          = NO
+WARN_LOGFILE           = @CMAKE_CURRENT_BINARY_DIR@/doxygen-warnings.log
+
+# ---- HTML output (published on GitHub Pages) -----------------------------------------
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_TREEVIEW      = YES
+FULL_SIDEBAR           = NO
+SEARCHENGINE           = YES
+SOURCE_BROWSER         = YES
+HTML_DYNAMIC_SECTIONS  = YES
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+
+# ---- Graphs (only when Graphviz is installed) ----------------------------------------
+HAVE_DOT               = @TK4CPP_DOXYGEN_HAVE_DOT@
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = NO
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = NO
+GRAPHICAL_HIERARCHY    = YES
+DOT_MULTI_TARGETS      = YES
