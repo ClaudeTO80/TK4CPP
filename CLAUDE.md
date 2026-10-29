@@ -180,10 +180,8 @@ by building and running as described under *Working rules*.
    `FolderHandler::create(const std::filesystem::path&, bool)` is a non-static member now. Fails in
    `XmlLibxml2.cpp` and `XmlLibxml2Test.cpp`. Decide whether `FolderHandler` should offer a static
    helper or `XMLManager` should hold an instance.
-3. **Utility's `FileHandlerTest.cpp` is stale.** It uses `FileHandler::isFolder`, `createFolders` and
-   `removeFolder`, which no longer exist (folder handling moved to `FolderHandler`). Because the file is
-   part of the single `TK4CPP_Utility_tests` executable, the whole Utility test target fails to
-   build; with that file removed the remaining 21 tests pass. This is a test bug, not a library bug.
+3. **Fixed (verified 2026-10-28):** the Utility tests build and pass (Thread+Utility only, static+shared, 50 of 50 ctest entries
+   including the new `Glob`, `Utf8`, `SizeFormat`, `TimeParse` and `FindTest` cases). The old stale-test note no longer applies.
 4. **Shared libraries of Encode and Thread export no symbols on Linux.**
    - Encode: the classes in `Base64.h`, `UrlEncoding.h`, `Io.h` have no `TK4CPP_ENCODE_EXPORT`
      (the module only sets `WINDOWS_EXPORT_ALL_SYMBOLS`, which affects Windows only). The shared

@@ -1,5 +1,9 @@
 #include <TK4CPP/Utility/FolderHandler.hpp>
 
+#include <TK4CPP/Utility/FileStat.hpp>
+#include <TK4CPP/Utility/Glob.hpp>
+#include <TK4CPP/Utility/SizeFormat.hpp>
+
 #include <algorithm>
 #include <format>
 #include <future>
@@ -24,32 +28,6 @@ namespace TK4CPP::Utility {
 namespace fs = std::filesystem;
 
 namespace {
-
-/**
- * @brief Minimal glob matcher supporting '*' and '?' (portable replacement for POSIX fnmatch).
- * @param pattern Glob pattern.
- * @param str     String to test.
- * @return True if @p str matches @p pattern.
- */
-bool wildcardMatch(std::string const& pattern, std::string const& str)
-{
-    std::size_t p = 0, s = 0, star = std::string::npos, match = 0;
-    while (s < str.size()) {
-        if (p < pattern.size() && (pattern[p] == '?' || pattern[p] == str[s])) {
-            ++p; ++s;
-        } else if (p < pattern.size() && pattern[p] == '*') {
-            star  = p++;
-            match = s;
-        } else if (star != std::string::npos) {
-            p = star + 1;
-            s = ++match;
-        } else {
-            return false;
-        }
-    }
-    while (p < pattern.size() && pattern[p] == '*') ++p;
-    return p == pattern.size();
-}
 
 /// True if the file name of @p p starts with '.'.
 bool isHidden(fs::path const& p)
@@ -164,8 +142,42 @@ bool FolderHandler::matchFilter(fs::path const& path, FolderFilter const& filter
     if (filter.excludeHidden && !filename.empty() && filename[0] == '.')
         return false;
 
-    if (!filter.namePattern.empty() && !wildcardMatch(filter.namePattern, filename))
+    if (!filter.namePattern.empty() && !globMatch(filter.namePattern, filename, filter.caseSensitive))
         return false;
+
+    if (!containsText(filename, filter.nameContains, filter.caseSensitive))
+        return false;
+
+    if (!filter.namePatterns.empty()) {
+        bool const any = std::any_of(filter.namePatterns.begin(), filter.namePatterns.end(),
+            [&](std::string const& p) { return globMatch(p, filename, filter.caseSensitive); });
+        if (!any) return false;
+    }
+    if (std::any_of(filter.excludePatterns.begin(), filter.excludePatterns.end(),
+            [&](std::string const& p) { return globMatch(p, filename, filter.caseSensitive); }))
+        return false;
+
+    // Metadata conditions come last: they cost a system call, the name tests above are free.
+    if (filter.needsMetadata()) {
+        FileStat const st = probeFile(path, filter.usesCreation());
+        if (!st.ok) return false;
+        bool const isFile = st.type == FileType::Regular;
+        bool const isDir  = st.type == FileType::Directory;
+        if (filter.kind == FolderFilter::Kind::Files && !isFile)       return false;
+        if (filter.kind == FolderFilter::Kind::Directories && !isDir)  return false;
+        if (filter.minSize || filter.maxSize) {
+            if (!isFile) return false;
+            if (filter.minSize && st.size < *filter.minSize) return false;
+            if (filter.maxSize && st.size > *filter.maxSize) return false;
+        }
+        auto const inRange = [](std::int64_t v, std::optional<std::int64_t> const& lo, std::optional<std::int64_t> const& hi) {
+            if (!lo && !hi) return true;
+            if (v == kNoTimestamp) return false;
+            return (!lo || v >= *lo) && (!hi || v <= *hi);
+        };
+        if (!inRange(st.modified, filter.modifiedAfter, filter.modifiedBefore)) return false;
+        if (!inRange(st.created, filter.createdAfter, filter.createdBefore))    return false;
+    }
 
     if (filter.predicate && !filter.predicate(path))
         return false;
@@ -606,6 +618,41 @@ std::vector<fs::path> FolderHandler::find(fs::path const& path, FolderFilter con
     return list(path, /*recursive=*/true, filter);
 }
 
+void FolderHandler::findImpl(fs::path const& path, FolderFilter const& filter, int depth,
+                             std::stop_token const& stop, std::size_t maxResults, std::vector<fs::path>& out) const
+{
+    std::error_code ec;
+    fs::directory_iterator it(path, ec);
+    if (ec) { reportError(ec, "find/iterate"); return; }
+
+    for (fs::directory_iterator const end; it != end; ) {
+        if (stop.stop_requested() || (maxResults != 0 && out.size() >= maxResults)) return;
+        fs::directory_entry const& entry = *it;
+
+        if (!(filter.excludeHidden && isHidden(entry.path()))) {
+            // Symbolic links are never followed (an entry that is a link to a folder is not a folder here).
+            bool const isDir = entry.is_directory(ec) && !entry.is_symlink(ec);
+            if (matchFilter(entry.path(), filter, depth))
+                out.push_back(entry.path());
+            if (isDir && canDescend(filter, depth))
+                findImpl(entry.path(), filter, depth + 1, stop, maxResults, out);
+        }
+
+        ec.clear();
+        it.increment(ec);
+        if (ec) { reportError(ec, "find/iterate"); return; }
+    }
+}
+
+std::vector<fs::path> FolderHandler::find(fs::path const& path, FolderFilter const& filter,
+                                          std::stop_token stop, std::size_t maxResults) const
+{
+    FH_LOG(LogLevel::Debug, "find: {} pattern={} maxResults={}", path.string(), filter.namePattern, maxResults);
+    std::vector<fs::path> result;
+    findImpl(path, filter, 1, stop, maxResults, result);
+    return result;
+}
+
 std::map<std::string, std::vector<fs::path>>
 FolderHandler::findDuplicates(fs::path const& path) const
 {
@@ -753,21 +800,7 @@ bool FolderHandler::isSubPath(fs::path const& parent, fs::path const& child)
 
 std::string FolderHandler::formatSize(std::uintmax_t bytes)
 {
-    constexpr double KB = 1024.0;
-    constexpr double MB = KB * 1024.0;
-    constexpr double GB = MB * 1024.0;
-    constexpr double TB = GB * 1024.0;
-
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(2);
-
-    if      (bytes >= static_cast<std::uintmax_t>(TB)) oss << bytes / TB << " TB";
-    else if (bytes >= static_cast<std::uintmax_t>(GB)) oss << bytes / GB << " GB";
-    else if (bytes >= static_cast<std::uintmax_t>(MB)) oss << bytes / MB << " MB";
-    else if (bytes >= static_cast<std::uintmax_t>(KB)) oss << bytes / KB << " KB";
-    else                                                oss << bytes     << " B";
-
-    return oss.str();
+    return TK4CPP::Utility::formatSize(bytes, SizeUnits::Binary);
 }
 
 } // namespace TK4CPP::Utility

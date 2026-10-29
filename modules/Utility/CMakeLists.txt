@@ -1,6 +1,9 @@
 set(_sources
     src/FileHandler.cpp
+    src/FileStat.cpp
     src/FolderHandler.cpp
+    src/SizeFormat.cpp
+    src/TimeParse.cpp
     src/System.cpp
     src/UUIDHandler.cpp
     src/Value.cpp

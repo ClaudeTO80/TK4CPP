@@ -226,6 +226,13 @@ Namespace `TK4CPP::Utility`, headers in `TK4CPP/Utility/`.
   and `FileArtifact` for file-backed values.
 - `FileHandler`: file operations with write and copy behaviours (`WriteBehavior`, `CopyBehavior`).
 - `FolderHandler`: folder operations with `FolderFilter`, `CopyOptions`, `FolderStats`, `FolderDiff`.
+  `FolderFilter` also selects by several name globs, exclusions, substring, case folding, kind, size range and
+  modification/creation date range; `find(path, filter, std::stop_token, maxResults)` is a cancellable, capped search
+  that never follows symbolic links.
+- Search helpers: `globMatch`/`containsText` (`Glob.hpp`, `?` is one UTF-8 code point, linear-time), `formatSize`/`parseSize`
+  (`SizeFormat.hpp`, binary, decimal and IEC units), `parseTimestamp` (`TimeParse.hpp`, `7d` or `YYYY-MM-DD[THH:MM[:SS]]`),
+  `probeFile` (`FileStat.hpp`, one lstat plus creation time via `statx` on Linux and `st_birthtime` on macOS; unavailable on
+  Windows), UTF-8 helpers (`Utf8.hpp`).
 - `UUIDHandler`: `Generate_V4()`, `Generate_V6()`, `Generate_V7()`.
 - `Version`: four-component version (`create(major, minor, patch, tweak)`, comparison).
 - `System`: `freeMemory()`, `physicalCores()`, `logicalCores()`.

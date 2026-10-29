@@ -4,6 +4,7 @@
 #include <functional>
 #include <map>
 #include <optional>
+#include <stop_token>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -156,8 +157,19 @@ public:
                                              FolderFilter const& filter = {}) const
     { return list(fs::path{path}, recursive, filter); }
 
-    /// Advanced recursive search (namePattern + predicate + depth).
+    /// Advanced recursive search (name patterns, size and date ranges, kind, predicate, depth).
     [[nodiscard]] std::vector<fs::path> find(fs::path const& path, FolderFilter const& filter) const;
+
+    /**
+     * @brief Cancellable recursive search with a result cap.
+     * @param path       Folder to search (symbolic links are never followed).
+     * @param filter     Selection criteria, see FolderFilter.
+     * @param stop       Checked for every entry; when stop is requested the matches found so far are returned.
+     * @param maxResults Stop after this many matches (0 = unlimited).
+     * @return Matching paths in directory order.
+     */
+    [[nodiscard]] std::vector<fs::path> find(fs::path const& path, FolderFilter const& filter,
+                                             std::stop_token stop, std::size_t maxResults = 0) const;
 
     /**
      * @brief Find duplicate files by name and size.
@@ -231,7 +243,7 @@ public:
     /// Check that @p child lies structurally inside @p parent.
     [[nodiscard]] static bool isSubPath(fs::path const& parent, fs::path const& child);
 
-    /// Format a byte count as a human readable string ("1.23 MB").
+    /// Format a byte count as a human readable string ("1.23 MB", powers of 1024; see formatSize() in SizeFormat.hpp for other units).
     [[nodiscard]] static std::string formatSize(std::uintmax_t bytes);
     /// @}
 
@@ -246,6 +258,10 @@ private:
 
     /// Check whether @p path satisfies @p filter at the given depth.
     static bool matchFilter(fs::path const& path, FolderFilter const& filter, int depth);
+
+    /// Recursive implementation of the cancellable find().
+    void findImpl(fs::path const& path, FolderFilter const& filter, int depth, std::stop_token const& stop,
+                  std::size_t maxResults, std::vector<fs::path>& out) const;
 
     /// Recursive implementation of walk().
     void walkImpl(fs::path const& path, Visitor const& visitor, bool recursive,
