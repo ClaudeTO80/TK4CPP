@@ -55,8 +55,7 @@ cmake --build build-static -k 0              # -k 0: do not stop at the first st
 ctest --test-dir build-static --output-on-failure
 ```
 
-The second recipe only configures after the `Thread` test target name is fixed (see problem 1).
-Without the fix, any configuration with `TK4CPP_BUILD_TESTS=ON` fails at the *generate* step.
+The second recipe configures and builds with tests on (the `Thread` test target name is fixed, see problem 1).
 
 Zip needs libzip ≥ 1.11 installed and found by `find_package(libzip 1.11 CONFIG REQUIRED)`; the
 `3rdParty/libzip` submodule is not consumed automatically. Build and install it, then pass
@@ -161,40 +160,28 @@ Naming is not uniform. Watch for these: module `Thread` ↔ namespace `TK4CPP::T
 - Tests are GoogleTest, one executable per module (`TK4CPP_<Name>_tests`), except Process (plain
   executables with a helper program) and Zip (plain executables plus built documentation snippets).
 
-## Known problems (verified 2026-10-23, commit `32500b0`, GCC 13.3, Linux)
+## Known problems (re-verified 2026-11-19, commit `ccedb3d`, GCC 13.3, Linux)
 
 Check each one again before working around it; fixing them is welcome and each fix should be verified
 by building and running as described under *Working rules*.
 
-1. **Thread tests/examples link a target that does not exist.**
-   `modules/Thread/tests/CMakeLists.txt:2` and `modules/Thread/examples/CMakeLists.txt` use
-   `TK4CPP::ThreadPool`; the target is `TK4CPP::Thread`. With `TK4CPP_BUILD_TESTS=ON` this aborts at
-   the generate step ("Target test_threadpool links to TK4CPP::ThreadPool but the target was not
-   found"). Replacing the name makes the test build; it then passes with static libraries. The
-   examples directory is not added by `tk4cpp_add_module`, so it is dead until wired up.
-   `modules/Thread/ThreadConfig.cmake`, `modules/Thread/cmake/ThreadConfig.cmake{,.in}` and
-   `TK4CPPThreadConfig.cmake.in` / `TK4CPP_ThreadConfig.cmake.in` are leftovers of the standalone
+1. **Fixed (re-verified 2026-11-19):** the Thread tests configure and build against `TK4CPP::Thread`;
+   the static configuration with tests passes 88 of 88. Still open: `modules/Thread/examples/CMakeLists.txt`
+   uses `TK4CPP::ThreadPool`, but the examples directory is not added by `tk4cpp_add_module`, so it is
+   dead until wired up. `modules/Thread/ThreadConfig.cmake`, `modules/Thread/cmake/ThreadConfig.cmake{,.in}`
+   and `TK4CPPThreadConfig.cmake.in` / `TK4CPP_ThreadConfig.cmake.in` are leftovers of the standalone
    project and are not used by the build.
-2. **XML does not compile.** `modules/XML/include/TK4CPP/XML/XML.h:515` calls
-   `TK4CPP::Utility::FolderHandler::create(parent).first` as a static function, but
-   `FolderHandler::create(const std::filesystem::path&, bool)` is a non-static member now. Fails in
-   `XmlLibxml2.cpp` and `XmlLibxml2Test.cpp`. Decide whether `FolderHandler` should offer a static
-   helper or `XMLManager` should hold an instance.
+2. **Fixed (re-verified 2026-11-19):** XML compiles with tests enabled and its tests pass 116 of 116
+   (static, Zip off). The `FolderHandler::create` call at `modules/XML/include/TK4CPP/XML/XML.h` is
+   resolved. Whether `FolderHandler` should offer a static helper is still an open API question.
 3. **Fixed (verified 2026-10-28):** the Utility tests build and pass (Thread+Utility only, static+shared, 50 of 50 ctest entries
    including the new `Glob`, `Utf8`, `SizeFormat`, `TimeParse` and `FindTest` cases). The old stale-test note no longer applies.
-4. **Shared libraries of Encode and Thread export no symbols on Linux.**
-   - Encode: the classes in `Base64.h`, `UrlEncoding.h`, `Io.h` have no `TK4CPP_ENCODE_EXPORT`
-     (the module only sets `WINDOWS_EXPORT_ALL_SYMBOLS`, which affects Windows only). The shared
-     `TK4CPP_Encode_tests` fails to link with undefined references to `Base64::encode/decode` and
-     `UrlEncoding::encode/decode`.
-   - Thread: `ThreadPool/Export.h` defines `TK4CPP_TP_API` from `TK4CPP_TP_SHARED` /
-     `TK4CPP_TP_BUILDING`, which the root helper never defines (it defines `TK4CPP_THREAD_EXPORTS` and
-     `TK4CPP_THREAD_STATIC_DEFINE`). The macro therefore expands to nothing and the shared
-     `test_threadpool` fails to link. Either map the macro onto the generated `TK4CPP_THREAD_EXPORT`
-     or add the missing definitions in `modules/Thread/CMakeLists.txt`.
-   - Both pass in a static-only build (`TK4CPP_BUILD_SHARED=OFF`).
-5. **Aggregate package misses Logging, Process and Zip.** `TK4CPPConfig.cmake` includes
-   `TK4CPP_<Module>Deps.cmake` and `TK4CPP_<Module>Targets.cmake`; these three modules install
+4. **Fixed (re-verified 2026-11-19):** the shared-library build with tests configures, compiles and passes
+   88 of 88 (Encode and Thread included). The earlier missing `TK4CPP_ENCODE_EXPORT` and `TK4CPP_TP_API`
+   link failures do not reproduce on this tree. The export macros should still be reviewed on Windows,
+   where they matter, since this has not been verified there.
+5. **Aggregate package misses Logging, Process and Zip (not re-verified 2026-11-19).** `TK4CPPConfig.cmake`
+   includes `TK4CPP_<Module>Deps.cmake` and `TK4CPP_<Module>Targets.cmake`; these three modules install
    `TK4CPP_<Module>Config.cmake` instead, so `find_package(TK4CPP REQUIRED COMPONENTS Logging)`
    errors with "include could not find requested file TK4CPP_LoggingDeps.cmake". The per-module
    `find_package(TK4CPP_Logging)` also fails by default because the file sits in
@@ -202,28 +189,29 @@ by building and running as described under *Working rules*.
    `TK4CPP_Process_DIR`, `TK4CPP_Zip_DIR`) to `<prefix>/lib/cmake/TK4CPP` works (verified with a
    consumer project). `modules/Process` and `modules/Thread` also still ship duplicate `*Config.cmake.in`
    templates with different names; only one of each is used.
-6. **JWT signing key is hardcoded.** `modules/JWT/src/JWTHandler.cpp` signs and verifies with the
-   literal `"HiAll"` (lines 35 and 66). `JWTHandler` is fully static and has no key setter. Treat the
-   module as a demonstration until the key is injectable; never put a real secret in source.
-7. **Dependency declaration gap.** `Utility → Thread` is missing from `TK4CPP_MODULE_DEPENDS_*`
-   in the root `CMakeLists.txt`.
-8. **Metadata placeholders.** The root `project()` has `HOMEPAGE_URL "https://github.com/OWNER/TK4CPP"`;
-   `THIRD_PARTY_NOTICES.md` lacks entries for spdlog and libzip; the former README referred to a `docs/` folder and a GitHub Pages workflow
-   (`.github/workflows/docs.yml`) that are not in the tree.
+6. **JWT signing key is hardcoded (still open, re-verified 2026-11-19).** `modules/JWT/src/JWTHandler.cpp`
+   signs and verifies with the literal `"HiAll"` (lines 35 and 66). `JWTHandler` is fully static and has
+   no key setter. Treat the module as a demonstration until the key is injectable; never put a real secret in source.
+7. **Dependency declaration gap (still open, re-verified 2026-11-19).** `Utility → Thread` is missing from
+   `TK4CPP_MODULE_DEPENDS_*` in the root `CMakeLists.txt`, which only declares `TK4CPP_MODULE_DEPENDS_XML`.
+8. **Metadata placeholders (still open, re-verified 2026-11-19).** The root `project()` has
+   `HOMEPAGE_URL "https://github.com/OWNER/TK4CPP"`; `THIRD_PARTY_NOTICES.md` lacks entries for spdlog and
+   libzip. The `.github/workflows/docs.yml` workflow exists in the tree but was not checked against the
+   docs layout described in the former README.
 9. **Unverified:** Windows, macOS, Clang, `TK4CPP_CXX_STANDARD=20`, sanitizer builds
-   (`TK4CPP_PROCESS_SANITIZE`), the Doxygen builds, the `msvc` and `debug-clang` presets, and all
-   shared-library variants other than the compile step.
+   (`TK4CPP_PROCESS_SANITIZE`), the Doxygen builds, the `msvc` and `debug-clang` presets, Zip (needs libzip ≥ 1.11
+   installed), and the `Logging` and `Process` standalone builds.
 
 ### Last verified results
 
 | Check | Result |
 | ----- | ------ |
-| Default shared+static, tests/XML/Zip off | builds, exit 0 (68 steps) |
-| `debug` preset (`-Werror`), tests/XML/Zip off | builds, exit 0 |
-| Static-only, tests on (with problem 1 patched), XML/Zip off | 39 of 41 ctest entries pass; the 2 that do not run are Utility (problem 3) and XML (problem 2) |
-| Utility without `FileHandlerTest.cpp` | 21 of 21 pass |
-| Zip against libzip 1.11 built from the submodule, static | `zip_tests`, `zip_highlevel_tests` pass |
-| Installed package + consumer project | `TK4CPP::Encode` via `find_package(TK4CPP COMPONENTS Utility Encode Thread)` builds and runs; Logging/Process/Zip need the `*_DIR` workaround |
+| Static, tests ON, XML/Zip OFF (2026-11-19, `ccedb3d`) | build OK (67 of 67 steps); ctest 88 of 88 pass |
+| Shared, tests ON, XML/Zip OFF (2026-11-19, `ccedb3d`) | build OK; ctest 88 of 88 pass |
+| XML + static, tests ON, Zip OFF (2026-11-19, `ccedb3d`) | build OK, 0 errors; ctest 116 of 116 pass |
+| Utility without `FileHandlerTest.cpp` | 21 of 21 pass (2026-10-23, not re-run) |
+| Zip against libzip 1.11 built from the submodule, static | `zip_tests`, `zip_highlevel_tests` pass (2026-10-23, not re-run) |
+| Installed package + consumer project | `TK4CPP::Encode` via `find_package(TK4CPP COMPONENTS Utility Encode Thread)` builds and runs; Logging/Process/Zip need the `*_DIR` workaround (2026-10-23, not re-run) |
 
 ## Tips for common tasks
 
