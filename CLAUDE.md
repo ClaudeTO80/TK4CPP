@@ -118,8 +118,8 @@ Doxygen is not installed in the verified environment and no root `docs/CMakeList
 | Framework-native | Utility, JWT, XML, Encode, Thread | `tk4cpp_add_module(...)`; generated `Export.h`; install handled by the helper; discoverable through `find_package(TK4CPP COMPONENTS ...)` |
 | Standalone-style (imported) | Logging, Process, Zip | Own `project()`, own targets, own install and package config; honour `TK4CPP_*` variables when defined, with defaults otherwise; add themselves to `TK4CPP_BUILT_MODULES` manually |
 
-Standalone-style modules do **not** emit `TK4CPP_<Name>Deps.cmake`, so the aggregate
-`find_package(TK4CPP COMPONENTS Logging)` fails (problem 5). When touching these modules keep them
+Standalone-style modules do **not** emit `TK4CPP_<Name>Deps.cmake` (Process emits it since 2026-11-24), so the aggregate
+`find_package(TK4CPP COMPONENTS Logging)` still fails (problem 5). When touching these modules keep them
 buildable standalone as well as through the root, or convert them to `tk4cpp_add_module` deliberately
 and say so.
 
@@ -180,7 +180,7 @@ by building and running as described under *Working rules*.
    88 of 88 (Encode and Thread included). The earlier missing `TK4CPP_ENCODE_EXPORT` and `TK4CPP_TP_API`
    link failures do not reproduce on this tree. The export macros should still be reviewed on Windows,
    where they matter, since this has not been verified there.
-5. **Aggregate package misses Logging, Process and Zip (not re-verified 2026-11-19).** `TK4CPPConfig.cmake`
+5. **Aggregate package misses Logging and Zip (Process fixed 2026-11-24).** Process now installs `TK4CPP_ProcessDeps.cmake` when it is built inside the framework; verified with a consumer project doing `find_package(TK4CPP REQUIRED COMPONENTS Process Encode)` on a static-only install, and with `process_tests`, `process_tests_forkpath` and `TK4CPP_Encode_tests` (3 of 3 pass, GCC 13.3). The text below still describes Logging and Zip. `TK4CPPConfig.cmake`
    includes `TK4CPP_<Module>Deps.cmake` and `TK4CPP_<Module>Targets.cmake`; these three modules install
    `TK4CPP_<Module>Config.cmake` instead, so `find_package(TK4CPP REQUIRED COMPONENTS Logging)`
    errors with "include could not find requested file TK4CPP_LoggingDeps.cmake". The per-module
@@ -199,8 +199,13 @@ by building and running as described under *Working rules*.
    libzip. The `.github/workflows/docs.yml` workflow exists in the tree but was not checked against the
    docs layout described in the former README.
 9. **Unverified:** Windows, macOS, Clang, `TK4CPP_CXX_STANDARD=20`, sanitizer builds
-   (`TK4CPP_PROCESS_SANITIZE`), the Doxygen builds, the `msvc` and `debug-clang` presets, Zip (needs libzip ≥ 1.11
-   installed), and the `Logging` and `Process` standalone builds.
+   (`TK4CPP_PROCESS_SANITIZE`), the Doxygen builds, the `msvc` and `debug-clang` presets, the `Logging` and `Process`
+   standalone builds. Zip is verified on Linux only, with libzip 1.12.1 built from `3rdParty/libzip` (see the table below);
+   other libzip versions are not verified.
+10. **Scheduler is not part of the root build (found 2026-11-24).** `modules/Scheduler` exists with its own CMake, but
+    `Scheduler` is not in `TK4CPP_KNOWN_MODULES`, so `add_subdirectory` never reaches it and the installed
+    `TK4CPPConfig.cmake` does not list it. Its README describes a Quartz-style scheduler with SQLite persistence
+    (`SqliteJobStore`) and a ThreadPool executor; none of that was built or tested in this session.
 
 ### Last verified results
 
@@ -210,7 +215,9 @@ by building and running as described under *Working rules*.
 | Shared, tests ON, XML/Zip OFF (2026-11-19, `ccedb3d`) | build OK; ctest 88 of 88 pass |
 | XML + static, tests ON, Zip OFF (2026-11-19, `ccedb3d`) | build OK, 0 errors; ctest 116 of 116 pass |
 | Utility without `FileHandlerTest.cpp` | 21 of 21 pass (2026-10-23, not re-run) |
-| Zip against libzip 1.11 built from the submodule, static | `zip_tests`, `zip_highlevel_tests` pass (2026-10-23, not re-run) |
+| Zip against libzip 1.12.1 built from `3rdParty/libzip` (OpenSSL, GnuTLS, MbedTLS, bzip2, LZMA, zstd off), static, GCC 13.3 | build OK; ctest 11 of 11 pass (2026-11-24, `b162be4`) |
+| Process + Encode, static, tests ON | `process_tests`, `process_tests_forkpath`, `TK4CPP_Encode_tests` pass, 3 of 3 (2026-11-24, `b162be4`) |
+| Process + Encode installed (static only), consumer project | `find_package(TK4CPP REQUIRED COMPONENTS Process Encode)` configures, builds and links (2026-11-24, `b162be4`) |
 | Installed package + consumer project | `TK4CPP::Encode` via `find_package(TK4CPP COMPONENTS Utility Encode Thread)` builds and runs; Logging/Process/Zip need the `*_DIR` workaround (2026-10-23, not re-run) |
 
 ## Tips for common tasks
