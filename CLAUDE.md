@@ -199,8 +199,13 @@ by building and running as described under *Working rules*.
    libzip. The `.github/workflows/docs.yml` workflow exists in the tree but was not checked against the
    docs layout described in the former README.
 9. **Unverified:** Windows, macOS, Clang, `TK4CPP_CXX_STANDARD=20`, sanitizer builds
-   (`TK4CPP_PROCESS_SANITIZE`), the Doxygen builds, the `msvc` and `debug-clang` presets, Zip (needs libzip ≥ 1.11
-   installed), and the `Logging` and `Process` standalone builds.
+   (`TK4CPP_PROCESS_SANITIZE`), the Doxygen builds, the `msvc` and `debug-clang` presets, the `Logging` and `Process`
+   standalone builds. Zip is verified on Linux only, with libzip 1.12.1 built from `3rdParty/libzip` (see the table below);
+   other libzip versions are not verified.
+10. **Scheduler is not part of the root build (found 2026-11-24).** `modules/Scheduler` exists with its own CMake, but
+    `Scheduler` is not in `TK4CPP_KNOWN_MODULES`, so `add_subdirectory` never reaches it and the installed
+    `TK4CPPConfig.cmake` does not list it. Its README describes a Quartz-style scheduler with SQLite persistence
+    (`SqliteJobStore`) and a ThreadPool executor; none of that was built or tested in this session.
 
 ### Last verified results
 
@@ -210,7 +215,9 @@ by building and running as described under *Working rules*.
 | Shared, tests ON, XML/Zip OFF (2026-11-19, `ccedb3d`) | build OK; ctest 88 of 88 pass |
 | XML + static, tests ON, Zip OFF (2026-11-19, `ccedb3d`) | build OK, 0 errors; ctest 116 of 116 pass |
 | Utility without `FileHandlerTest.cpp` | 21 of 21 pass (2026-10-23, not re-run) |
-| Zip against libzip 1.11 built from the submodule, static | `zip_tests`, `zip_highlevel_tests` pass (2026-10-23, not re-run) |
+| Zip against libzip 1.12.1 built from `3rdParty/libzip` (OpenSSL, GnuTLS, MbedTLS, bzip2, LZMA, zstd off), static, GCC 13.3 | build OK; ctest 11 of 11 pass (2026-11-24, `b162be4`) |
+| Process + Encode, static, tests ON | `process_tests`, `process_tests_forkpath`, `TK4CPP_Encode_tests` pass, 3 of 3 (2026-11-24, `b162be4`) |
+| Process + Encode installed (static only), consumer project | `find_package(TK4CPP REQUIRED COMPONENTS Process Encode)` configures, builds and links (2026-11-24, `b162be4`) |
 | Installed package + consumer project | `TK4CPP::Encode` via `find_package(TK4CPP COMPONENTS Utility Encode Thread)` builds and runs; Logging/Process/Zip need the `*_DIR` workaround (2026-10-23, not re-run) |
 
 ## Tips for common tasks
