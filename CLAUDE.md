@@ -118,8 +118,8 @@ Doxygen is not installed in the verified environment and no root `docs/CMakeList
 | Framework-native | Utility, JWT, XML, Encode, Thread | `tk4cpp_add_module(...)`; generated `Export.h`; install handled by the helper; discoverable through `find_package(TK4CPP COMPONENTS ...)` |
 | Standalone-style (imported) | Logging, Process, Zip | Own `project()`, own targets, own install and package config; honour `TK4CPP_*` variables when defined, with defaults otherwise; add themselves to `TK4CPP_BUILT_MODULES` manually |
 
-Standalone-style modules do **not** emit `TK4CPP_<Name>Deps.cmake`, so the aggregate
-`find_package(TK4CPP COMPONENTS Logging)` fails (problem 5). When touching these modules keep them
+Standalone-style modules do **not** emit `TK4CPP_<Name>Deps.cmake` (Process emits it since 2026-11-24), so the aggregate
+`find_package(TK4CPP COMPONENTS Logging)` still fails (problem 5). When touching these modules keep them
 buildable standalone as well as through the root, or convert them to `tk4cpp_add_module` deliberately
 and say so.
 
@@ -180,7 +180,7 @@ by building and running as described under *Working rules*.
    88 of 88 (Encode and Thread included). The earlier missing `TK4CPP_ENCODE_EXPORT` and `TK4CPP_TP_API`
    link failures do not reproduce on this tree. The export macros should still be reviewed on Windows,
    where they matter, since this has not been verified there.
-5. **Aggregate package misses Logging, Process and Zip (not re-verified 2026-11-19).** `TK4CPPConfig.cmake`
+5. **Aggregate package misses Logging and Zip (Process fixed 2026-11-24).** Process now installs `TK4CPP_ProcessDeps.cmake` when it is built inside the framework; verified with a consumer project doing `find_package(TK4CPP REQUIRED COMPONENTS Process Encode)` on a static-only install, and with `process_tests`, `process_tests_forkpath` and `TK4CPP_Encode_tests` (3 of 3 pass, GCC 13.3). The text below still describes Logging and Zip. `TK4CPPConfig.cmake`
    includes `TK4CPP_<Module>Deps.cmake` and `TK4CPP_<Module>Targets.cmake`; these three modules install
    `TK4CPP_<Module>Config.cmake` instead, so `find_package(TK4CPP REQUIRED COMPONENTS Logging)`
    errors with "include could not find requested file TK4CPP_LoggingDeps.cmake". The per-module
